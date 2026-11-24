@@ -30,7 +30,7 @@ class PullerTest(unittest.TestCase):
                 return SimpleNamespace(content=archive.getvalue())
             else:
                 self.assertIn("cat=101",url)
-                slug = "first" if "page=1&" in url else "second"
+                slug = "first" if "page=1&" in url else "Second"
                 body = f'<div class="lv1left"><a href="{slug}.font"><strong>{slug}</strong></a></div><a href="//dl.dafont.com/dl/?f={slug}">Download</a>'
                 if slug == "first":
                     body += '<a title="Keyboard shortcut: Right arrow" href="/theme.php?cat=101&page=2">Next</a>'

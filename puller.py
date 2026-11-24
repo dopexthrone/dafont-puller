@@ -80,7 +80,7 @@ def rows(body):
     seen = []
     for part in parts:
         title = re.search(r'<a href="([^"]*\.font[^"]*)"[^>]*><strong>(.*?)</strong>', part, re.S)
-        slug = re.search(r'href="(?:https?:)?//dl\.dafont\.com/dl/\?f=([a-z0-9_]{1,120})"', part)
+        slug = re.search(r'href="(?:https?:)?//dl\.dafont\.com/dl/\?f=([A-Za-z0-9_]{1,120})"', part)
         terms = re.search(r'<a[^>]*href="[^"]*#copyright"[^>]*>(.*?)</a>', part, re.S)
         if not slug or not title:
             raise RuntimeError("Incomplete font row. Page left pending.")
@@ -142,7 +142,7 @@ def pull(db, out, workers):
     policy = rules(DL)
     def retrieve(record):
         slug = record[0]
-        if not re.fullmatch("[a-z0-9_]{1,120}",slug):
+        if not re.fullmatch("[A-Za-z0-9_]{1,120}",slug):
             raise ValueError("Invalid catalogue identifier")
         path = out / (slug+".zip")
         if path.exists():
