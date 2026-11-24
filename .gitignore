@@ -5,3 +5,5 @@
 !/requirements.txt
 !/puller.py
 !/test_puller.py
+!/foundry.py
+!/test_foundry.py
