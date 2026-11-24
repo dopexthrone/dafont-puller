@@ -1,6 +1,6 @@
 # DaFont Puller
 
-Build a resumable local catalogue of DaFont by theme, from the terminal. Records include the family name, source page, theme and licence label. The index covers the published theme directory including Bitmap and excludes Dingbats and Holiday. All licence labels are eligible.
+Build a resumable local catalogue of DaFont by theme, from the terminal. Records include the family name, source page, theme, licence label, and the designer, author profile and website where credited. The index covers the published theme directory including Bitmap and excludes Dingbats and Holiday. All licence labels are eligible.
 
 ## Quick start
 
@@ -17,6 +17,8 @@ python puller.py status
 ```
 
 The default output directory is `~/DaFont`. Pass the same `--output DIRECTORY` to each command to use another location. Each page commits its entries and next page number together to SQLite. Press Ctrl-C to stop and rerun the index command to resume. Run one indexer per output directory. The catalogue reflects pages as retrieved and DaFont can change during a run.
+
+Upgrading an existing index preserves its font records and restarts the page checkpoints once to collect designer credits. Run the index command again to backfill. Missing credits and links are stored as NULL.
 
 Index two pages of the Sans serif theme as a quick trial, then continue the full index.
 

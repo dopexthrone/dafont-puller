@@ -4,6 +4,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
+import sqlite3
 import unittest
 from unittest.mock import patch
 from zipfile import ZipFile
@@ -31,7 +32,7 @@ class PullerTest(unittest.TestCase):
             else:
                 self.assertIn("cat=101",url)
                 slug = "first" if "page=1&" in url else "Second"
-                body = f'<div class="lv1left"><a href="{slug}.font"><strong>{slug}</strong></a></div><a href="//dl.dafont.com/dl/?f={slug}">Download</a>'
+                body = f'<div class="lv1left"><a href="{slug}.font"><strong>{slug}</strong></a> by <a href="maker.d123?fpp=200">Maker</a><a href="https://example.org/">&nbsp;<img></a></div><a href="//dl.dafont.com/dl/?f={slug}">Download</a>'
                 if slug == "first":
                     body += '<a title="Keyboard shortcut: Right arrow" href="/theme.php?cat=101&page=2">Next</a>'
             return SimpleNamespace(content=body.encode())
@@ -42,6 +43,9 @@ class PullerTest(unittest.TestCase):
                     puller.main()
             cli("index","--pages","1")
             cli("index")
+            with sqlite3.connect(Path(output)/"catalog.sqlite") as db:
+                self.assertEqual(db.execute("SELECT DISTINCT designer,author_profile,author_website,credit_checked FROM fonts").fetchall(),
+                                 [("Maker","https://www.dafont.com/maker.d123","https://example.org/",1)])
             self.assertEqual(sum("page=1&" in u for u in visited),1)
             self.assertEqual(sum("page=2&" in u for u in visited),1)
             with self.assertRaisesRegex(RuntimeError,"disallows"):

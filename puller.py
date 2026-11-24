@@ -84,7 +84,14 @@ def rows(body):
         terms = re.search(r'<a[^>]*href="[^"]*#copyright"[^>]*>(.*?)</a>', part, re.S)
         if not slug or not title:
             raise RuntimeError("Incomplete font row. Page left pending.")
-        seen.append((slug[1], clean(title[2]), urljoin(SITE, unescape(title[1])), clean(terms[1]) if terms else "Unknown"))
+        header = part.partition("</div>")[0]
+        credit = re.search(r'\bby\s+<a\b[^>]*?href="([^"]+)"[^>]*>(.*?)</a>', header, re.I | re.S)
+        plain = re.search(r'\bby\s+([^<]+)', header, re.I)
+        designer = clean(credit[2]) if credit else clean(plain[1]) if plain else None
+        profile = urljoin(SITE, unescape(credit[1])).split("?")[0] if credit else None
+        external = re.search(r'<a\b[^>]*?href="(https?://[^"]+)"[^>]*>\s*(?:&nbsp;)?\s*<img', header, re.I)
+        website = unescape(external[1]) if external else None
+        seen.append((slug[1], clean(title[2]), urljoin(SITE, unescape(title[1])), clean(terms[1]) if terms else "Unknown", designer, profile, website))
     return seen
 
 
@@ -116,7 +123,7 @@ def scan(db, limit, selected):
                 if following != page + 1:
                     raise RuntimeError("Unexpected pagination")
             with db:
-                db.executemany("INSERT OR REPLACE INTO fonts VALUES(?,?,?,?,?,?)",
+                db.executemany("INSERT OR REPLACE INTO fonts(slug,name,source,label,designer,author_profile,author_website,theme,category,credit_checked) VALUES(?,?,?,?,?,?,?,?,?,1)",
                                [(*font,theme,group) for font in fonts])
                 db.execute("INSERT OR REPLACE INTO pages VALUES(?,?)",(theme,following))
             print(f"{group} {theme}, page {page}: {len(fonts)} entries", flush=True)
@@ -182,6 +189,14 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     with closing(sqlite3.connect(args.output/"catalog.sqlite")) as db:
         db.executescript("CREATE TABLE IF NOT EXISTS fonts(slug TEXT PRIMARY KEY,name TEXT,source TEXT,label TEXT,theme TEXT,category TEXT); CREATE TABLE IF NOT EXISTS pages(theme TEXT PRIMARY KEY,next INTEGER);")
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            columns = {row[1] for row in db.execute("PRAGMA table_info(fonts)")}
+            if "credit_checked" not in columns:
+                for column in ("designer TEXT", "author_profile TEXT", "author_website TEXT", "credit_checked INTEGER NOT NULL DEFAULT 0"):
+                    db.execute("ALTER TABLE fonts ADD COLUMN " + column)
+                # Old checkpoints refer to pages read before attribution was collected.
+                db.execute("UPDATE pages SET next=1")
         if args.command == "index":
             scan(db,args.pages,args.theme)
         elif args.command == "pull":
